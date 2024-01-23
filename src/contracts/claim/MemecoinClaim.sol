@@ -565,7 +565,7 @@ contract MemecoinClaim is
         address[] calldata _addresses,
         uint128[] calldata _claimables,
         ClaimType[] calldata _claimTypes
-    ) external {
+    ) external onlyOwner {
         uint256 len = _addresses.length;
         if (len != _claimables.length || len != _claimTypes.length)
             revert MismatchedArrays();
@@ -581,7 +581,9 @@ contract MemecoinClaim is
 
     /// @dev Set `airdropTotalClaimable` and `rewardsTotalClaimable` in nftUsersClaimData for token ID(s) of respective collection ID
     /// @param _nftClaimables Array of NFTClaimable which consists of collectionId, tokenId and amount of claim token
-    function setNFTClaimables(NFTClaimable[] calldata _nftClaimables) external {
+    function setNFTClaimables(
+        NFTClaimable[] calldata _nftClaimables
+    ) external onlyOwner {
         for (uint256 i; i < _nftClaimables.length; ) {
             uint256 collectionId = _nftClaimables[i].collectionId;
             uint256 tokenId = _nftClaimables[i].tokenId;
@@ -604,7 +606,7 @@ contract MemecoinClaim is
     function addNFTUnlockedBPAndSetUnlockTs(
         uint64 _additionalNFTUnlockedBP,
         uint128 _newUnlockTimestamp
-    ) external {
+    ) external onlyOwner {
         uint64 currentNFTUnlockedBP_ = currentNFTUnlockedBP;
         uint128 currentNFTUnlockTimestamp_ = currentNFTUnlockTimestamp;
         if (
@@ -623,7 +625,7 @@ contract MemecoinClaim is
     function setUnclaimedNFTRewards(
         uint256 _collectionId,
         uint128[] calldata _unclaimTokenIds
-    ) external onlyValidCollectionId(_collectionId) {
+    ) external onlyValidCollectionId(_collectionId) onlyOwner {
         if (block.timestamp <= claimStartDate + _MAX_CLAIM_PERIOD)
             revert NFTRewardsNotExpired();
 
@@ -661,7 +663,7 @@ contract MemecoinClaim is
     function setRevealedCaptainzClaimable(
         uint256 _tokenId,
         uint128 _additionalAirdropTotalClaimable
-    ) external {
+    ) external onlyOwner {
         nftUsersClaimData[1][_tokenId]
             .airdropTotalClaimable += _additionalAirdropTotalClaimable;
     }
@@ -676,7 +678,7 @@ contract MemecoinClaim is
     function depositClaimTokenAndStartClaim(
         uint256 _tokenAmount,
         uint256 _claimStartDate
-    ) external {
+    ) external onlyOwner {
         if (claimTokenDeposited) revert AlreadyDeposited();
         if (address(claimToken) == address(0)) revert ClaimTokenZeroAddress();
         if (_tokenAmount == 0) revert InvalidClaimSetup();
@@ -696,7 +698,7 @@ contract MemecoinClaim is
     function withdrawClaimToken(
         address _receiver,
         uint256 _amount
-    ) external onlyClaimNotOpen {
+    ) external onlyOwner onlyClaimNotOpen {
         if (address(claimToken) == address(0)) revert ClaimTokenZeroAddress();
 
         claimToken.safeTransfer(_receiver, _amount);
@@ -704,7 +706,7 @@ contract MemecoinClaim is
 
     /// @dev Withdraw unclaimed NFTRewards after they are expired when _MAX_CLAIM_PERIOD has passed since claim starts, to be called ONCE only
     /// @param _receiver Address to receive the token
-    function withdrawUnclaimedNFTRewards(address _receiver) external {
+    function withdrawUnclaimedNFTRewards(address _receiver) external onlyOwner {
         if (unclaimedNFTRewardsWithdrawn) revert AlreadyWithdrawn();
         if (block.timestamp <= claimStartDate + _MAX_CLAIM_PERIOD)
             revert NFTRewardsNotExpired();
@@ -735,7 +737,7 @@ contract MemecoinClaim is
     function setClaimSchedules(
         ClaimType[] calldata _claimTypes,
         ClaimSchedule[] calldata _claimSchedules
-    ) external onlyClaimNotOpen {
+    ) external onlyOwner onlyClaimNotOpen {
         uint256 len = _claimSchedules.length;
         if (_claimTypes.length != len) revert MismatchedArrays();
         for (uint256 i; i < len; ) {
@@ -760,7 +762,7 @@ contract MemecoinClaim is
 
     /// @dev Start/stop the claim
     /// @param _claimActive New boolean to indicate active or not
-    function setClaimActive(bool _claimActive) external {
+    function setClaimActive(bool _claimActive) external onlyOwner {
         claimActive = _claimActive;
 
         emit ClaimStatusUpdated(_claimActive);
@@ -768,19 +770,19 @@ contract MemecoinClaim is
 
     /// @dev Set the new claim start date, allow flexibility on setting as past date to unlock claim earlier
     /// @param _claimStartDate New date to start the claim
-    function setClaimStartDate(uint256 _claimStartDate) external {
+    function setClaimStartDate(uint256 _claimStartDate) external onlyOwner {
         claimStartDate = _claimStartDate;
     }
 
     /// @dev Set the new MultiClaim contract address
     /// @param _multiClaim New MultiClaim contract address
-    function setMultiClaimAddress(address _multiClaim) external {
+    function setMultiClaimAddress(address _multiClaim) external onlyOwner {
         multiClaim = _multiClaim;
     }
 
     /// @dev Set the new UUPS proxy upgrader, allow setting address(0) to disable upgradeability
     /// @param _upgrader New upgrader
-    function setUpgrader(address _upgrader) external {
+    function setUpgrader(address _upgrader) external onlyOwner {
         if (upgraderRenounced) revert UpgraderRenounced();
         upgrader = _upgrader;
 
@@ -788,7 +790,7 @@ contract MemecoinClaim is
     }
 
     /// @notice Renounce the upgradibility of this contract
-    function renounceUpgrader() external {
+    function renounceUpgrader() external onlyOwner {
         if (upgraderRenounced) revert UpgraderRenounced();
 
         upgraderRenounced = true;
