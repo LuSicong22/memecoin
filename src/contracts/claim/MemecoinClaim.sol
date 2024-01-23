@@ -58,13 +58,16 @@ contract MemecoinClaim is
     function _authorizeUpgrade(address) internal override onlyUpgrader {}
 
     /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
 
-    constructor(
+    function initialize(
         address _claimTokenAddress,
         address _mvpAddress,
         address _captainzAddress,
         address _potatozAddress
-    ) {
+    ) external initializer {
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init_unchained();
         OwnableUpgradeable.__Ownable_init_unchained();
         UUPSUpgradeable.__UUPSUpgradeable_init();
