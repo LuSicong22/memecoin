@@ -65,9 +65,9 @@ contract MemecoinClaim is
         address _captainzAddress,
         address _potatozAddress
     ) {
-        // ReentrancyGuardUpgradeable.__ReentrancyGuard_init_unchained();
-        // OwnableUpgradeable.__Ownable_init_unchained();
-        // UUPSUpgradeable.__UUPSUpgradeable_init();
+        ReentrancyGuardUpgradeable.__ReentrancyGuard_init_unchained();
+        OwnableUpgradeable.__Ownable_init_unchained();
+        UUPSUpgradeable.__UUPSUpgradeable_init();
         dc = IDelegationRegistry(0x00000000000076A84feF008CDAbe6409d2FE638B);
         dcV2 = IDelegateRegistry(0x00000000000000447e69651d841bD8D104Bed493);
         claimToken = IERC20(_claimTokenAddress);
