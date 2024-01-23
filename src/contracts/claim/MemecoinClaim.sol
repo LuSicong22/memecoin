@@ -58,19 +58,16 @@ contract MemecoinClaim is
     function _authorizeUpgrade(address) internal override onlyUpgrader {}
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
 
-    function initialize(
+    constructor(
         address _claimTokenAddress,
         address _mvpAddress,
         address _captainzAddress,
         address _potatozAddress
-    ) external initializer {
-        ReentrancyGuardUpgradeable.__ReentrancyGuard_init_unchained();
-        OwnableUpgradeable.__Ownable_init_unchained();
-        UUPSUpgradeable.__UUPSUpgradeable_init();
+    ) {
+        // ReentrancyGuardUpgradeable.__ReentrancyGuard_init_unchained();
+        // OwnableUpgradeable.__Ownable_init_unchained();
+        // UUPSUpgradeable.__UUPSUpgradeable_init();
         dc = IDelegationRegistry(0x00000000000076A84feF008CDAbe6409d2FE638B);
         dcV2 = IDelegateRegistry(0x00000000000000447e69651d841bD8D104Bed493);
         claimToken = IERC20(_claimTokenAddress);

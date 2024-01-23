@@ -11,8 +11,7 @@ contract MemecoinClaimTest is Test {
 
     function setUp() public {
         memecoin = new Memecoin("Memecoin", "MEME", 1e24, address(this));
-        memecoinClaim = new MemecoinClaim();
-        memecoinClaim.initialize(
+        memecoinClaim = new MemecoinClaim(
             address(memecoin),
             address(0),
             address(0),
