@@ -45,10 +45,14 @@ contract MemecoinClaim is
     uint64 public previousNFTUnlockedBP;
     uint128 public currentNFTUnlockTimestamp;
 
-    mapping(address userAddress => mapping(ClaimType claimType => ClaimData userClaimData)) public usersClaimData;
-    mapping(uint256 collectionId => mapping(uint256 tokenId => NFTClaimData userClaimData)) public nftUsersClaimData;
-    mapping(ClaimType claimType => ClaimSchedule claimSchedule) public claimScheduleOf;
-    mapping(uint256 collectionId => UnclaimedNFTRewards) public unclaimedNftRewards;
+    mapping(address userAddress => mapping(ClaimType claimType => ClaimData userClaimData))
+        public usersClaimData;
+    mapping(uint256 collectionId => mapping(uint256 tokenId => NFTClaimData userClaimData))
+        public nftUsersClaimData;
+    mapping(ClaimType claimType => ClaimSchedule claimSchedule)
+        public claimScheduleOf;
+    mapping(uint256 collectionId => UnclaimedNFTRewards)
+        public unclaimedNftRewards;
 
     // required by the OZ UUPS module
     function _authorizeUpgrade(address) internal override onlyUpgrader {}
@@ -70,7 +74,11 @@ contract MemecoinClaim is
         dc = IDelegationRegistry(0x00000000000076A84feF008CDAbe6409d2FE638B);
         dcV2 = IDelegateRegistry(0x00000000000000447e69651d841bD8D104Bed493);
         claimToken = IERC20(_claimTokenAddress);
-        nftCollections = [IERC721(_mvpAddress), IERC721(_captainzAddress), IERC721(_potatozAddress)];
+        nftCollections = [
+            IERC721(_mvpAddress),
+            IERC721(_captainzAddress),
+            IERC721(_potatozAddress)
+        ];
     }
 
     /// @notice Claim token by claimTypes according to the vesting schedule after claim starts, user won't be able to claim after the allocated $MEME are fully vested for _MAX_CLAIM_PERIOD
@@ -78,7 +86,10 @@ contract MemecoinClaim is
     /// emit { UserClaimed } event for amount claimed
     /// @param _vault Vault address of delegate.xyz; pass address(0) if not using delegate wallet
     /// @param _claimTypes Array of ClaimType to claim
-    function claim(address _vault, ClaimType[] calldata _claimTypes) external nonReentrant onlyValidClaimSetup {
+    function claim(
+        address _vault,
+        ClaimType[] calldata _claimTypes
+    ) external nonReentrant onlyValidClaimSetup {
         address requester = _getRequester(_vault);
         uint256 totalClaimable = _claim(requester, _claimTypes);
 
@@ -95,7 +106,11 @@ contract MemecoinClaim is
         bool _withWalletRewards
     ) external nonReentrant onlyValidClaimSetup {
         address requester = _getRequester(_vault);
-        uint256 totalClaimable = _claimInNFTs(requester, _nftCollectionClaimRequests, _withWalletRewards);
+        uint256 totalClaimable = _claimInNFTs(
+            requester,
+            _nftCollectionClaimRequests,
+            _withWalletRewards
+        );
 
         claimToken.safeTransfer(requester, totalClaimable);
     }
@@ -109,12 +124,10 @@ contract MemecoinClaim is
     /// emit { UserClaimed } event for amount claimed
     /// @param _requester address of eligible claim wallet
     /// @param _claimTypes Array of ClaimType to claim
-    function claimFromMulti(address _requester, ClaimType[] calldata _claimTypes)
-        external
-        nonReentrant
-        onlyValidClaimSetup
-        onlyMultiClaim
-    {
+    function claimFromMulti(
+        address _requester,
+        ClaimType[] calldata _claimTypes
+    ) external nonReentrant onlyValidClaimSetup onlyMultiClaim {
         uint256 totalClaimable = _claim(_requester, _claimTypes);
 
         claimToken.safeTransfer(_requester, totalClaimable);
@@ -129,7 +142,11 @@ contract MemecoinClaim is
         NFTCollectionClaimRequest[] calldata _nftCollectionClaimRequests,
         bool _withWalletRewards
     ) external nonReentrant onlyValidClaimSetup onlyMultiClaim {
-        uint256 totalClaimable = _claimInNFTs(_requester, _nftCollectionClaimRequests, _withWalletRewards);
+        uint256 totalClaimable = _claimInNFTs(
+            _requester,
+            _nftCollectionClaimRequests,
+            _withWalletRewards
+        );
 
         claimToken.safeTransfer(_requester, totalClaimable);
     }
@@ -139,14 +156,21 @@ contract MemecoinClaim is
     /// @param _vault Address to verify against _msgSender
     function _getRequester(address _vault) private view returns (address) {
         if (_vault == address(0)) return _msgSender();
-        bool isDelegateValid = dcV2.checkDelegateForAll(_msgSender(), _vault, "");
+        bool isDelegateValid = dcV2.checkDelegateForAll(
+            _msgSender(),
+            _vault,
+            ""
+        );
         if (isDelegateValid) return _vault;
         isDelegateValid = dc.checkDelegateForAll(_msgSender(), _vault);
         if (!isDelegateValid) revert InvalidDelegate();
         return _vault;
     }
 
-    function _claim(address _requester, ClaimType[] memory _claimTypes) internal returns (uint128 amountClaimed) {
+    function _claim(
+        address _requester,
+        ClaimType[] memory _claimTypes
+    ) internal returns (uint128 amountClaimed) {
         amountClaimed = _executeClaim(_requester, _claimTypes);
         if (amountClaimed == 0) revert NoClaimableToken();
 
@@ -158,11 +182,19 @@ contract MemecoinClaim is
         NFTCollectionClaimRequest[] calldata _nftCollectionClaimRequests,
         bool _withWalletRewards
     ) internal returns (uint128 amountClaimed) {
-        amountClaimed = _executeClaimInNFTs(_requester, _nftCollectionClaimRequests);
+        amountClaimed = _executeClaimInNFTs(
+            _requester,
+            _nftCollectionClaimRequests
+        );
 
         if (_withWalletRewards) {
-            ClaimData storage userClaimData = usersClaimData[_requester][ClaimType.WalletRewards];
-            uint128 claimable = _calculateClaimable(userClaimData, ClaimType.WalletRewards);
+            ClaimData storage userClaimData = usersClaimData[_requester][
+                ClaimType.WalletRewards
+            ];
+            uint128 claimable = _calculateClaimable(
+                userClaimData,
+                ClaimType.WalletRewards
+            );
             if (claimable > 0) {
                 /// @dev assume no overflow as the max amountClaimed amount won't exceed uint128 throughout the whole life cycle
                 unchecked {
@@ -180,13 +212,18 @@ contract MemecoinClaim is
     /// @param _requester Address of the claimer
     /// @param _claimTypes Array of ClaimType to claim
     /// @return totalClaimable Amount of total claimable calculated from the given ClaimTypes
-    function _executeClaim(address _requester, ClaimType[] memory _claimTypes)
-        private
-        returns (uint128 totalClaimable)
-    {
+    function _executeClaim(
+        address _requester,
+        ClaimType[] memory _claimTypes
+    ) private returns (uint128 totalClaimable) {
         for (uint256 i; i < _claimTypes.length; i++) {
-            ClaimData storage userClaimData = usersClaimData[_requester][_claimTypes[i]];
-            uint128 claimable = _calculateClaimable(userClaimData, _claimTypes[i]);
+            ClaimData storage userClaimData = usersClaimData[_requester][
+                _claimTypes[i]
+            ];
+            uint128 claimable = _calculateClaimable(
+                userClaimData,
+                _claimTypes[i]
+            );
             if (claimable > 0) {
                 /// @dev assume no overflow as the max totalClaimable amount won't exceed uint128 throughout the whole life cycle
                 unchecked {
@@ -201,37 +238,53 @@ contract MemecoinClaim is
     /// @param _requester Address of the claimer
     /// @param _nftCollectionClaimRequests Array of NFTCollectionClaimRequest that consists collection ID of the NFT, token ID(s) the owner owns, array of booleans to indicate NFTAirdrop/NFTRewards claim for each token ID
     /// @return totalNFTClaimable Amount of total NFT claimable calculated from the given NFT Collection ID and token ID(s)
-    function _executeClaimInNFTs(address _requester, NFTCollectionClaimRequest[] calldata _nftCollectionClaimRequests)
-        private
-        returns (uint128 totalNFTClaimable)
-    {
-        for (uint256 i; i < _nftCollectionClaimRequests.length;) {
-            uint256[] calldata tokenIds = _nftCollectionClaimRequests[i].tokenIds;
-            bool[] calldata withNFTAirdropList = _nftCollectionClaimRequests[i].withNFTAirdropList;
-            bool[] calldata withNFTRewardsList = _nftCollectionClaimRequests[i].withNFTRewardsList;
+    function _executeClaimInNFTs(
+        address _requester,
+        NFTCollectionClaimRequest[] calldata _nftCollectionClaimRequests
+    ) private returns (uint128 totalNFTClaimable) {
+        for (uint256 i; i < _nftCollectionClaimRequests.length; ) {
+            uint256[] calldata tokenIds = _nftCollectionClaimRequests[i]
+                .tokenIds;
+            bool[] calldata withNFTAirdropList = _nftCollectionClaimRequests[i]
+                .withNFTAirdropList;
+            bool[] calldata withNFTRewardsList = _nftCollectionClaimRequests[i]
+                .withNFTRewardsList;
             uint256 len = tokenIds.length;
-            if (len != withNFTAirdropList.length || len != withNFTRewardsList.length) {
+            if (
+                len != withNFTAirdropList.length ||
+                len != withNFTRewardsList.length
+            ) {
                 revert MismatchedArrays();
             }
             uint256 collectionId = _nftCollectionClaimRequests[i].collectionId;
 
-            for (uint256 j; j < len;) {
+            for (uint256 j; j < len; ) {
                 uint128 claimable;
                 if (withNFTAirdropList[j]) {
-                    claimable = _verifyNFTClaim(_requester, collectionId, tokenIds[j]);
+                    claimable = _verifyNFTClaim(
+                        _requester,
+                        collectionId,
+                        tokenIds[j]
+                    );
                     if (claimable > 0) {
                         /// @dev assume no overflow as the max claimable amount won't exceed uint128
                         unchecked {
-                            nftUsersClaimData[collectionId][tokenIds[j]].airdropClaimed += claimable;
+                            nftUsersClaimData[collectionId][tokenIds[j]]
+                                .airdropClaimed += claimable;
                             totalNFTClaimable += claimable;
                         }
                     }
                 }
                 if (withNFTRewardsList[j]) {
-                    claimable = _verifyNFTRewardClaim(_requester, collectionId, tokenIds[j]);
+                    claimable = _verifyNFTRewardClaim(
+                        _requester,
+                        collectionId,
+                        tokenIds[j]
+                    );
                     if (claimable > 0) {
                         unchecked {
-                            nftUsersClaimData[collectionId][tokenIds[j]].rewardsClaimed += claimable;
+                            nftUsersClaimData[collectionId][tokenIds[j]]
+                                .rewardsClaimed += claimable;
                             totalNFTClaimable += claimable;
                         }
                     }
@@ -250,33 +303,36 @@ contract MemecoinClaim is
     /// @param _requester Address of the claimer
     /// @param _collectionId Collection ID of the NFT
     /// @param _tokenId Token ID that the owner owns
-    function _verifyNFTClaim(address _requester, uint256 _collectionId, uint256 _tokenId)
-        private
-        view
-        onlyValidCollectionId(_collectionId)
-        returns (uint128)
-    {
-        if (nftCollections[_collectionId].ownerOf(_tokenId) != _requester) revert Unauthorized();
+    function _verifyNFTClaim(
+        address _requester,
+        uint256 _collectionId,
+        uint256 _tokenId
+    ) private view onlyValidCollectionId(_collectionId) returns (uint128) {
+        if (nftCollections[_collectionId].ownerOf(_tokenId) != _requester)
+            revert Unauthorized();
 
-        return _calculateNFTClaimable(nftUsersClaimData[_collectionId][_tokenId]);
+        return
+            _calculateNFTClaimable(nftUsersClaimData[_collectionId][_tokenId]);
     }
 
-    function _verifyNFTRewardClaim(address _requester, uint256 _collectionId, uint256 _tokenId)
-        private
-        view
-        onlyValidCollectionId(_collectionId)
-        returns (uint128)
-    {
-        if (nftCollections[_collectionId].ownerOf(_tokenId) != _requester) revert Unauthorized();
+    function _verifyNFTRewardClaim(
+        address _requester,
+        uint256 _collectionId,
+        uint256 _tokenId
+    ) private view onlyValidCollectionId(_collectionId) returns (uint128) {
+        if (nftCollections[_collectionId].ownerOf(_tokenId) != _requester)
+            revert Unauthorized();
 
-        return _calculateNFTRewardsClaimable(nftUsersClaimData[_collectionId][_tokenId]);
+        return
+            _calculateNFTRewardsClaimable(
+                nftUsersClaimData[_collectionId][_tokenId]
+            );
     }
 
-    function _calculateClaimable(ClaimData memory _userClaimdata, ClaimType _claimType)
-        private
-        view
-        returns (uint128)
-    {
+    function _calculateClaimable(
+        ClaimData memory _userClaimdata,
+        ClaimType _claimType
+    ) private view returns (uint128) {
         uint128 totalClaimable = _userClaimdata.totalClaimable;
         uint128 claimed = _userClaimdata.claimed;
         if (totalClaimable == 0 || claimed >= totalClaimable) return 0;
@@ -293,7 +349,14 @@ contract MemecoinClaim is
         if (numOfLockUpBPs == 0) revert InvalidClaimSetup();
 
         // claim will expire after the allocated $MEME are fully vested for _MAX_CLAIM_PERIOD
-        if (block.timestamp > claimStartDate + _LOCK_UP_SLOT * numOfLockUpBPs * 1 days + _MAX_CLAIM_PERIOD) {
+        if (
+            block.timestamp >
+            claimStartDate +
+                _LOCK_UP_SLOT *
+                numOfLockUpBPs *
+                1 days +
+                _MAX_CLAIM_PERIOD
+        ) {
             return 0;
         }
 
@@ -302,44 +365,72 @@ contract MemecoinClaim is
         uint256 cyclesPassed = daysElapsed / _LOCK_UP_SLOT;
 
         // PrivatePresale first cycle unlocked amount locks up until the start of next cycle and allows instant claim
-        if (_claimType == ClaimType.PrivatePresale && daysElapsed < _LOCK_UP_SLOT) return 0;
+        if (
+            _claimType == ClaimType.PrivatePresale &&
+            daysElapsed < _LOCK_UP_SLOT
+        ) return 0;
 
         // Contributors has a different number of cycles, other claim types share the same one
-        bool isClaimTypeFullyVested = _claimType != ClaimType.Contributors && cyclesPassed >= _END_CYCLE;
-        bool isContributorFullyVested = _claimType == ClaimType.Contributors && cyclesPassed >= _END_CYCLE_CONTRIBUTORS;
+        bool isClaimTypeFullyVested = _claimType != ClaimType.Contributors &&
+            cyclesPassed >= _END_CYCLE;
+        bool isContributorFullyVested = _claimType == ClaimType.Contributors &&
+            cyclesPassed >= _END_CYCLE_CONTRIBUTORS;
         if (isClaimTypeFullyVested || isContributorFullyVested) {
             return _calculateRemainClaimable(totalClaimable, claimed);
         }
 
         // cyclesPassed + 1 because we want to calculate the current cycle's (with < 180 days elapsed) unlocked amount
-        return _calculateRemainClaimable(
-            _calculateUnlockedAmount(claimSchedule, numOfLockUpBPs, totalClaimable, cyclesPassed + 1, daysElapsed),
-            claimed
-        );
+        return
+            _calculateRemainClaimable(
+                _calculateUnlockedAmount(
+                    claimSchedule,
+                    numOfLockUpBPs,
+                    totalClaimable,
+                    cyclesPassed + 1,
+                    daysElapsed
+                ),
+                claimed
+            );
     }
 
-    function _calculateNFTClaimable(NFTClaimData memory _nftUserClaimdata) private view returns (uint128) {
+    function _calculateNFTClaimable(
+        NFTClaimData memory _nftUserClaimdata
+    ) private view returns (uint128) {
         uint256 currentNFTUnlockedBP_ = currentNFTUnlockedBP;
         if (currentNFTUnlockedBP_ == 0) return 0;
 
         // claim will expire after the allocated $MEME are fully vested for _MAX_CLAIM_PERIOD
         if (currentNFTUnlockedBP_ == _BASIS_POINTS) {
-            if (block.timestamp > currentNFTUnlockTimestamp + _MAX_CLAIM_PERIOD) {
+            if (
+                block.timestamp > currentNFTUnlockTimestamp + _MAX_CLAIM_PERIOD
+            ) {
                 return 0;
             }
         }
 
         uint128 airdropTotalClaimable = _nftUserClaimdata.airdropTotalClaimable;
         uint128 airdropClaimed = _nftUserClaimdata.airdropClaimed;
-        if (airdropTotalClaimable == 0 || airdropClaimed >= airdropTotalClaimable) return 0;
+        if (
+            airdropTotalClaimable == 0 ||
+            airdropClaimed >= airdropTotalClaimable
+        ) return 0;
 
-        return _calculateRemainClaimable(_calculateNFTUnlockedAmount(airdropTotalClaimable), airdropClaimed);
+        return
+            _calculateRemainClaimable(
+                _calculateNFTUnlockedAmount(airdropTotalClaimable),
+                airdropClaimed
+            );
     }
 
-    function _calculateNFTRewardsClaimable(NFTClaimData memory _nftUserClaimdata) private view returns (uint128) {
+    function _calculateNFTRewardsClaimable(
+        NFTClaimData memory _nftUserClaimdata
+    ) private view returns (uint128) {
         uint128 rewardsTotalClaimable = _nftUserClaimdata.rewardsTotalClaimable;
         uint128 rewardsClaimed = _nftUserClaimdata.rewardsClaimed;
-        if (rewardsTotalClaimable == 0 || rewardsClaimed >= rewardsTotalClaimable) return 0;
+        if (
+            rewardsTotalClaimable == 0 ||
+            rewardsClaimed >= rewardsTotalClaimable
+        ) return 0;
 
         // claim will expire after the allocated $MEME are fully vested for _MAX_CLAIM_PERIOD
         if (block.timestamp > claimStartDate + _MAX_CLAIM_PERIOD) {
@@ -349,7 +440,10 @@ contract MemecoinClaim is
         return _calculateRemainClaimable(rewardsTotalClaimable, rewardsClaimed);
     }
 
-    function _calculateRemainClaimable(uint128 _totalClaimable, uint128 _claimed) private pure returns (uint128) {
+    function _calculateRemainClaimable(
+        uint128 _totalClaimable,
+        uint128 _claimed
+    ) private pure returns (uint128) {
         /// @dev assume no underflow because we already return zero when _claimed is >= _totalClaimable
         unchecked {
             return _totalClaimable <= _claimed ? 0 : _totalClaimable - _claimed;
@@ -368,15 +462,17 @@ contract MemecoinClaim is
         if (_currentCycle > _numOfLockUpBPs) return _totalClaimable;
 
         // _currentCycle == _numOfLockUpBPs means _currentCycle is the last one
-        uint256 currentUnlockedBP =
-            _currentCycle == _numOfLockUpBPs ? _BASIS_POINTS : _claimSchedule.lockUpBPs[_currentCycle];
+        uint256 currentUnlockedBP = _currentCycle == _numOfLockUpBPs
+            ? _BASIS_POINTS
+            : _claimSchedule.lockUpBPs[_currentCycle];
 
-        return _calculateUnlockedAmountByDaysElapsed(
-            _totalClaimable,
-            _claimSchedule.lockUpBPs[_currentCycle - 1],
-            currentUnlockedBP,
-            _daysElapsed % _LOCK_UP_SLOT
-        );
+        return
+            _calculateUnlockedAmountByDaysElapsed(
+                _totalClaimable,
+                _claimSchedule.lockUpBPs[_currentCycle - 1],
+                currentUnlockedBP,
+                _daysElapsed % _LOCK_UP_SLOT
+            );
     }
 
     function _calculateUnlockedAmountByDaysElapsed(
@@ -386,20 +482,35 @@ contract MemecoinClaim is
         uint256 _daysElapsedForCurrentCycle
     ) private pure returns (uint128) {
         if (_daysElapsedForCurrentCycle == 0) {
-            return _toUint128(_totalClaimable * _previousUnlockedBP / _BASIS_POINTS);
+            return
+                _toUint128(
+                    (_totalClaimable * _previousUnlockedBP) / _BASIS_POINTS
+                );
         }
 
-        return _toUint128(
-            _totalClaimable * _previousUnlockedBP / _BASIS_POINTS
-                + _totalClaimable * (_currentUnlockedBP - _previousUnlockedBP) * _daysElapsedForCurrentCycle / _BASIS_POINTS
-                    / _LOCK_UP_SLOT
-        );
+        return
+            _toUint128(
+                (_totalClaimable * _previousUnlockedBP) /
+                    _BASIS_POINTS +
+                    (_totalClaimable *
+                        (_currentUnlockedBP - _previousUnlockedBP) *
+                        _daysElapsedForCurrentCycle) /
+                    _BASIS_POINTS /
+                    _LOCK_UP_SLOT
+            );
     }
 
-    function _calculateNFTUnlockedAmount(uint128 _totalClaimable) private view returns (uint128) {
-        return block.timestamp < currentNFTUnlockTimestamp
-            ? _toUint128(_totalClaimable * previousNFTUnlockedBP / _BASIS_POINTS)
-            : _toUint128(_totalClaimable * currentNFTUnlockedBP / _BASIS_POINTS);
+    function _calculateNFTUnlockedAmount(
+        uint128 _totalClaimable
+    ) private view returns (uint128) {
+        return
+            block.timestamp < currentNFTUnlockTimestamp
+                ? _toUint128(
+                    (_totalClaimable * previousNFTUnlockedBP) / _BASIS_POINTS
+                )
+                : _toUint128(
+                    (_totalClaimable * currentNFTUnlockedBP) / _BASIS_POINTS
+                );
     }
 
     function _toUint128(uint256 value) private pure returns (uint128) {
@@ -427,13 +538,18 @@ contract MemecoinClaim is
     }
 
     modifier onlyValidClaimSetup() {
-        if (!claimActive || claimStartDate == 0 || block.timestamp < claimStartDate) revert ClaimNotAvailable();
+        if (
+            !claimActive ||
+            claimStartDate == 0 ||
+            block.timestamp < claimStartDate
+        ) revert ClaimNotAvailable();
         if (address(claimToken) == address(0)) revert ClaimTokenZeroAddress();
         _;
     }
 
     modifier onlyValidCollectionId(uint256 _collectionId) {
-        if (_collectionId >= nftCollections.length) revert InvalidCollectionId();
+        if (_collectionId >= nftCollections.length)
+            revert InvalidCollectionId();
         _;
     }
 
@@ -449,12 +565,14 @@ contract MemecoinClaim is
         address[] calldata _addresses,
         uint128[] calldata _claimables,
         ClaimType[] calldata _claimTypes
-    ) external onlyOwner {
+    ) external {
         uint256 len = _addresses.length;
-        if (len != _claimables.length || len != _claimTypes.length) revert MismatchedArrays();
+        if (len != _claimables.length || len != _claimTypes.length)
+            revert MismatchedArrays();
 
-        for (uint256 i; i < len;) {
-            usersClaimData[_addresses[i]][_claimTypes[i]].totalClaimable = _claimables[i];
+        for (uint256 i; i < len; ) {
+            usersClaimData[_addresses[i]][_claimTypes[i]]
+                .totalClaimable = _claimables[i];
             unchecked {
                 ++i;
             }
@@ -463,15 +581,17 @@ contract MemecoinClaim is
 
     /// @dev Set `airdropTotalClaimable` and `rewardsTotalClaimable` in nftUsersClaimData for token ID(s) of respective collection ID
     /// @param _nftClaimables Array of NFTClaimable which consists of collectionId, tokenId and amount of claim token
-    function setNFTClaimables(NFTClaimable[] calldata _nftClaimables) external onlyOwner {
-        for (uint256 i; i < _nftClaimables.length;) {
+    function setNFTClaimables(NFTClaimable[] calldata _nftClaimables) external {
+        for (uint256 i; i < _nftClaimables.length; ) {
             uint256 collectionId = _nftClaimables[i].collectionId;
             uint256 tokenId = _nftClaimables[i].tokenId;
             uint128 airdropAmount = _nftClaimables[i].airdropTotalClaimable;
             uint128 rewardsAmount = _nftClaimables[i].rewardsTotalClaimable;
 
-            nftUsersClaimData[collectionId][tokenId].airdropTotalClaimable = airdropAmount;
-            nftUsersClaimData[collectionId][tokenId].rewardsTotalClaimable = rewardsAmount;
+            nftUsersClaimData[collectionId][tokenId]
+                .airdropTotalClaimable = airdropAmount;
+            nftUsersClaimData[collectionId][tokenId]
+                .rewardsTotalClaimable = rewardsAmount;
             unchecked {
                 ++i;
             }
@@ -481,15 +601,16 @@ contract MemecoinClaim is
     /// @dev Add new unlock percentage in Basis Points(BP) for NFT holders to instant claim until _BASIS_POINTS is reached
     /// @param _additionalNFTUnlockedBP Additional unlocked BP, only add up the currentNFTUnlockedBP
     /// @param _newUnlockTimestamp Timestamp for new unlocked BP to take effect
-    function addNFTUnlockedBPAndSetUnlockTs(uint64 _additionalNFTUnlockedBP, uint128 _newUnlockTimestamp)
-        external
-        onlyOwner
-    {
+    function addNFTUnlockedBPAndSetUnlockTs(
+        uint64 _additionalNFTUnlockedBP,
+        uint128 _newUnlockTimestamp
+    ) external {
         uint64 currentNFTUnlockedBP_ = currentNFTUnlockedBP;
         uint128 currentNFTUnlockTimestamp_ = currentNFTUnlockTimestamp;
         if (
-            _additionalNFTUnlockedBP == 0 || currentNFTUnlockedBP_ + _additionalNFTUnlockedBP > _BASIS_POINTS
-                || _newUnlockTimestamp <= currentNFTUnlockTimestamp_
+            _additionalNFTUnlockedBP == 0 ||
+            currentNFTUnlockedBP_ + _additionalNFTUnlockedBP > _BASIS_POINTS ||
+            _newUnlockTimestamp <= currentNFTUnlockTimestamp_
         ) revert InvalidClaimSetup();
         previousNFTUnlockedBP = currentNFTUnlockedBP_;
         currentNFTUnlockTimestamp = _newUnlockTimestamp;
@@ -499,25 +620,32 @@ contract MemecoinClaim is
     /// @dev Set the unclaimedNFTRewards mapping in order to withdraw unclaimed NFTRewards after they are expired
     /// @param _collectionId Respective collection ID with unclaimed NFTRewards
     /// @param _unclaimTokenIds Array of token IDs with NFTRewards that are left unclaimed
-    function setUnclaimedNFTRewards(uint256 _collectionId, uint128[] calldata _unclaimTokenIds)
-        external
-        onlyValidCollectionId(_collectionId)
-        onlyOwner
-    {
-        if (block.timestamp <= claimStartDate + _MAX_CLAIM_PERIOD) revert NFTRewardsNotExpired();
+    function setUnclaimedNFTRewards(
+        uint256 _collectionId,
+        uint128[] calldata _unclaimTokenIds
+    ) external onlyValidCollectionId(_collectionId) {
+        if (block.timestamp <= claimStartDate + _MAX_CLAIM_PERIOD)
+            revert NFTRewardsNotExpired();
 
-        UnclaimedNFTRewards storage _unclaimedNftRewards = unclaimedNftRewards[_collectionId];
+        UnclaimedNFTRewards storage _unclaimedNftRewards = unclaimedNftRewards[
+            _collectionId
+        ];
         uint256 len = _unclaimTokenIds.length;
-        if (len == 0 || _unclaimedNftRewards.lastTokenId > _unclaimTokenIds[0]) revert InvalidWithdrawalSetup();
+        if (len == 0 || _unclaimedNftRewards.lastTokenId > _unclaimTokenIds[0])
+            revert InvalidWithdrawalSetup();
 
         uint128 totalRewardsUnclaimed;
-        for (uint256 i; i < len;) {
+        for (uint256 i; i < len; ) {
             // ensure the next tokenId is bigger than the prev one
             if (i != 0) {
-                if (_unclaimTokenIds[i] < _unclaimTokenIds[i - 1]) revert InvalidWithdrawalSetup();
+                if (_unclaimTokenIds[i] < _unclaimTokenIds[i - 1])
+                    revert InvalidWithdrawalSetup();
             }
-            NFTClaimData memory nftUserClaimData = nftUsersClaimData[_collectionId][_unclaimTokenIds[i]];
-            uint128 rewardsUnclaimed = nftUserClaimData.rewardsTotalClaimable - nftUserClaimData.rewardsClaimed;
+            NFTClaimData memory nftUserClaimData = nftUsersClaimData[
+                _collectionId
+            ][_unclaimTokenIds[i]];
+            uint128 rewardsUnclaimed = nftUserClaimData.rewardsTotalClaimable -
+                nftUserClaimData.rewardsClaimed;
             if (rewardsUnclaimed > 0) totalRewardsUnclaimed += rewardsUnclaimed;
             unchecked {
                 ++i;
@@ -530,11 +658,12 @@ contract MemecoinClaim is
     /// @dev Set `airdropTotalClaimable` in nftUsersClaimData specifically for single token ID of a newly revelaed Captainz
     /// @param _tokenId Token ID of the newly revealed Captainz
     /// @param _additionalAirdropTotalClaimable Additional airdropTotalClaimable, only add up since a base amount will be set for unrevealed Captainz
-    function setRevealedCaptainzClaimable(uint256 _tokenId, uint128 _additionalAirdropTotalClaimable)
-        external
-        onlyOwner
-    {
-        nftUsersClaimData[1][_tokenId].airdropTotalClaimable += _additionalAirdropTotalClaimable;
+    function setRevealedCaptainzClaimable(
+        uint256 _tokenId,
+        uint128 _additionalAirdropTotalClaimable
+    ) external {
+        nftUsersClaimData[1][_tokenId]
+            .airdropTotalClaimable += _additionalAirdropTotalClaimable;
     }
 
     // ==============
@@ -544,7 +673,10 @@ contract MemecoinClaim is
     /// @dev Deposit claim token to contract and start the claim, to be called ONCE only
     /// @param _tokenAmount Amount of claim token to be deposited
     /// @param _claimStartDate Unix timestamp of the claim start date
-    function depositClaimTokenAndStartClaim(uint256 _tokenAmount, uint256 _claimStartDate) external onlyOwner {
+    function depositClaimTokenAndStartClaim(
+        uint256 _tokenAmount,
+        uint256 _claimStartDate
+    ) external {
         if (claimTokenDeposited) revert AlreadyDeposited();
         if (address(claimToken) == address(0)) revert ClaimTokenZeroAddress();
         if (_tokenAmount == 0) revert InvalidClaimSetup();
@@ -561,7 +693,10 @@ contract MemecoinClaim is
     /// @dev Withdraw claim token from contract only when claim is not open
     /// @param _receiver Address to receive the token
     /// @param _amount Amount of claim token to be withdrawn
-    function withdrawClaimToken(address _receiver, uint256 _amount) external onlyOwner onlyClaimNotOpen {
+    function withdrawClaimToken(
+        address _receiver,
+        uint256 _amount
+    ) external onlyClaimNotOpen {
         if (address(claimToken) == address(0)) revert ClaimTokenZeroAddress();
 
         claimToken.safeTransfer(_receiver, _amount);
@@ -569,14 +704,16 @@ contract MemecoinClaim is
 
     /// @dev Withdraw unclaimed NFTRewards after they are expired when _MAX_CLAIM_PERIOD has passed since claim starts, to be called ONCE only
     /// @param _receiver Address to receive the token
-    function withdrawUnclaimedNFTRewards(address _receiver) external onlyOwner {
+    function withdrawUnclaimedNFTRewards(address _receiver) external {
         if (unclaimedNFTRewardsWithdrawn) revert AlreadyWithdrawn();
-        if (block.timestamp <= claimStartDate + _MAX_CLAIM_PERIOD) revert NFTRewardsNotExpired();
+        if (block.timestamp <= claimStartDate + _MAX_CLAIM_PERIOD)
+            revert NFTRewardsNotExpired();
         if (_receiver == address(0)) revert InvalidWithdrawalSetup();
 
         uint256 totalWithdrawn;
-        for (uint256 i; i < nftCollections.length;) {
-            UnclaimedNFTRewards storage _unclaimedNftRewards = unclaimedNftRewards[i];
+        for (uint256 i; i < nftCollections.length; ) {
+            UnclaimedNFTRewards
+                storage _unclaimedNftRewards = unclaimedNftRewards[i];
 
             uint128 unclaimed = _unclaimedNftRewards.totalUnclaimed;
             if (unclaimed > 0) {
@@ -595,20 +732,20 @@ contract MemecoinClaim is
     /// @dev Set claim schedule(s) for claim type(s)
     /// @param _claimTypes Array of ClaimType
     /// @param _claimSchedules Array of ClaimSchedule for each claim type
-    function setClaimSchedules(ClaimType[] calldata _claimTypes, ClaimSchedule[] calldata _claimSchedules)
-        external
-        onlyOwner
-        onlyClaimNotOpen
-    {
+    function setClaimSchedules(
+        ClaimType[] calldata _claimTypes,
+        ClaimSchedule[] calldata _claimSchedules
+    ) external onlyClaimNotOpen {
         uint256 len = _claimSchedules.length;
         if (_claimTypes.length != len) revert MismatchedArrays();
-        for (uint256 i; i < len;) {
+        for (uint256 i; i < len; ) {
             uint256[] memory lockUpBPs = _claimSchedules[i].lockUpBPs;
-            for (uint256 j; j < lockUpBPs.length;) {
+            for (uint256 j; j < lockUpBPs.length; ) {
                 if (lockUpBPs[j] > _BASIS_POINTS) revert InvalidClaimSetup();
                 // ensure the accumulated lockupBP is bigger than the prev one
                 if (j != 0) {
-                    if (lockUpBPs[j] < lockUpBPs[j - 1]) revert InvalidClaimSetup();
+                    if (lockUpBPs[j] < lockUpBPs[j - 1])
+                        revert InvalidClaimSetup();
                 }
                 unchecked {
                     ++j;
@@ -623,7 +760,7 @@ contract MemecoinClaim is
 
     /// @dev Start/stop the claim
     /// @param _claimActive New boolean to indicate active or not
-    function setClaimActive(bool _claimActive) external onlyOwner {
+    function setClaimActive(bool _claimActive) external {
         claimActive = _claimActive;
 
         emit ClaimStatusUpdated(_claimActive);
@@ -631,19 +768,19 @@ contract MemecoinClaim is
 
     /// @dev Set the new claim start date, allow flexibility on setting as past date to unlock claim earlier
     /// @param _claimStartDate New date to start the claim
-    function setClaimStartDate(uint256 _claimStartDate) external onlyOwner {
+    function setClaimStartDate(uint256 _claimStartDate) external {
         claimStartDate = _claimStartDate;
     }
 
     /// @dev Set the new MultiClaim contract address
     /// @param _multiClaim New MultiClaim contract address
-    function setMultiClaimAddress(address _multiClaim) external onlyOwner {
+    function setMultiClaimAddress(address _multiClaim) external {
         multiClaim = _multiClaim;
     }
 
     /// @dev Set the new UUPS proxy upgrader, allow setting address(0) to disable upgradeability
     /// @param _upgrader New upgrader
-    function setUpgrader(address _upgrader) external onlyOwner {
+    function setUpgrader(address _upgrader) external {
         if (upgraderRenounced) revert UpgraderRenounced();
         upgrader = _upgrader;
 
@@ -651,7 +788,7 @@ contract MemecoinClaim is
     }
 
     /// @notice Renounce the upgradibility of this contract
-    function renounceUpgrader() external onlyOwner {
+    function renounceUpgrader() external {
         if (upgraderRenounced) revert UpgraderRenounced();
 
         upgraderRenounced = true;
@@ -668,7 +805,10 @@ contract MemecoinClaim is
     /// @param _user Address of user
     /// @return claimableAmount Amount of claimable tokens for a user
     /// @return claimableExpiry Timestamp of the claim expiry date for the respective _claimType
-    function getClaimInfo(address _user, ClaimType _claimType)
+    function getClaimInfo(
+        address _user,
+        ClaimType _claimType
+    )
         public
         view
         onlyValidClaimSetup
@@ -676,10 +816,17 @@ contract MemecoinClaim is
     {
         uint256 numOfLockUpBPs = claimScheduleOf[_claimType].lockUpBPs.length;
 
-        claimableAmount = _calculateClaimable(usersClaimData[_user][_claimType], _claimType);
+        claimableAmount = _calculateClaimable(
+            usersClaimData[_user][_claimType],
+            _claimType
+        );
         claimableExpiry = _claimType == ClaimType.WalletRewards
             ? claimStartDate + _MAX_CLAIM_PERIOD
-            : claimStartDate + _LOCK_UP_SLOT * numOfLockUpBPs * 1 days + _MAX_CLAIM_PERIOD;
+            : claimStartDate +
+                _LOCK_UP_SLOT *
+                numOfLockUpBPs *
+                1 days +
+                _MAX_CLAIM_PERIOD;
     }
 
     /// @notice Get claim info of one eligible NFT after claiming starts
@@ -687,17 +834,24 @@ contract MemecoinClaim is
     /// @param _tokenId Token ID that the owner owns
     /// @return claimableAmount Amount of claimable tokens for the NFT
     /// @return claimableExpiry Timestamp of the claim expiry date for NFT airdrop
-    function getClaimInfoByNFT(uint256 _collectionId, uint256 _tokenId)
+    function getClaimInfoByNFT(
+        uint256 _collectionId,
+        uint256 _tokenId
+    )
         public
         view
         onlyValidClaimSetup
         onlyValidCollectionId(_collectionId)
         returns (uint128 claimableAmount, uint256 claimableExpiry)
     {
-        NFTClaimData memory nftUserClaimData = nftUsersClaimData[_collectionId][_tokenId];
+        NFTClaimData memory nftUserClaimData = nftUsersClaimData[_collectionId][
+            _tokenId
+        ];
 
         claimableAmount = _calculateNFTClaimable(nftUserClaimData);
-        claimableExpiry = currentNFTUnlockedBP == _BASIS_POINTS ? currentNFTUnlockTimestamp + _MAX_CLAIM_PERIOD : 0;
+        claimableExpiry = currentNFTUnlockedBP == _BASIS_POINTS
+            ? currentNFTUnlockTimestamp + _MAX_CLAIM_PERIOD
+            : 0;
     }
 
     /// @notice Get rewards claim info of one eligible NFT after claiming starts
@@ -705,14 +859,19 @@ contract MemecoinClaim is
     /// @param _tokenId Token ID that the owner owns
     /// @return claimableAmount Amount of claimable tokens for the NFT
     /// @return claimableExpiry Timestamp of the claim expiry date for NFT rewards
-    function getRewardsClaimInfoByNFT(uint256 _collectionId, uint256 _tokenId)
+    function getRewardsClaimInfoByNFT(
+        uint256 _collectionId,
+        uint256 _tokenId
+    )
         public
         view
         onlyValidClaimSetup
         onlyValidCollectionId(_collectionId)
         returns (uint128 claimableAmount, uint256 claimableExpiry)
     {
-        NFTClaimData memory nftUserClaimData = nftUsersClaimData[_collectionId][_tokenId];
+        NFTClaimData memory nftUserClaimData = nftUsersClaimData[_collectionId][
+            _tokenId
+        ];
 
         claimableAmount = _calculateNFTRewardsClaimable(nftUserClaimData);
         claimableExpiry = claimStartDate + _MAX_CLAIM_PERIOD;
@@ -721,13 +880,15 @@ contract MemecoinClaim is
     /// @notice Get total amounts of claimable tokens of multiple tokenIds in one eligible collection after claiming starts
     /// @param _collectionId ID of NFT collection
     /// @param _tokenIds Array of all token IDs the owner owns in that collection
-    function getTotalClaimableAmountsByNFTs(uint256 _collectionId, uint256[] calldata _tokenIds)
-        public
-        view
-        returns (uint128 totalClaimable)
-    {
+    function getTotalClaimableAmountsByNFTs(
+        uint256 _collectionId,
+        uint256[] calldata _tokenIds
+    ) public view returns (uint128 totalClaimable) {
         for (uint256 i; i < _tokenIds.length; i++) {
-            (uint128 claimable,) = getClaimInfoByNFT(_collectionId, _tokenIds[i]);
+            (uint128 claimable, ) = getClaimInfoByNFT(
+                _collectionId,
+                _tokenIds[i]
+            );
             if (claimable == 0) continue;
 
             totalClaimable += claimable;
@@ -737,11 +898,9 @@ contract MemecoinClaim is
     /// @notice Get user claim data of multiple tokenIds in multiple eligible collections
     /// @param _nftCollectionsInfo Array of NFTCollectionInfo with collectionId and tokenId(s)
     /// @return collectionClaimInfo Array of CollectionClaimData that includes claim data for each tokenId of respective collection
-    function getUserClaimDataByCollections(NFTCollectionInfo[] calldata _nftCollectionsInfo)
-        public
-        view
-        returns (CollectionClaimData[] memory collectionClaimInfo)
-    {
+    function getUserClaimDataByCollections(
+        NFTCollectionInfo[] calldata _nftCollectionsInfo
+    ) public view returns (CollectionClaimData[] memory collectionClaimInfo) {
         uint256 numOfTokenIds;
         uint256 len = _nftCollectionsInfo.length;
         for (uint256 i = 0; i < len; i++) {
@@ -753,20 +912,26 @@ contract MemecoinClaim is
             uint256 collectionId = _nftCollectionsInfo[i].collectionId;
             uint256[] memory tokenIds = _nftCollectionsInfo[i].tokenIds;
             for (uint256 j; j < tokenIds.length; j++) {
-                (uint128 airdropClaimable, uint256 airdropClaimableExpiry) =
-                    getClaimInfoByNFT(collectionId, tokenIds[j]);
-                (uint128 rewardsClaimable, uint256 rewardClaimableExpiry) =
-                    getRewardsClaimInfoByNFT(collectionId, tokenIds[j]);
+                (
+                    uint128 airdropClaimable,
+                    uint256 airdropClaimableExpiry
+                ) = getClaimInfoByNFT(collectionId, tokenIds[j]);
+                (
+                    uint128 rewardsClaimable,
+                    uint256 rewardClaimableExpiry
+                ) = getRewardsClaimInfoByNFT(collectionId, tokenIds[j]);
                 collectionClaimInfo[activeId++] = CollectionClaimData(
                     collectionId,
                     tokenIds[j],
                     airdropClaimable,
                     airdropClaimableExpiry,
-                    nftUsersClaimData[collectionId][tokenIds[j]].airdropTotalClaimable,
+                    nftUsersClaimData[collectionId][tokenIds[j]]
+                        .airdropTotalClaimable,
                     nftUsersClaimData[collectionId][tokenIds[j]].airdropClaimed,
                     rewardsClaimable,
                     rewardClaimableExpiry,
-                    nftUsersClaimData[collectionId][tokenIds[j]].rewardsTotalClaimable,
+                    nftUsersClaimData[collectionId][tokenIds[j]]
+                        .rewardsTotalClaimable,
                     nftUsersClaimData[collectionId][tokenIds[j]].rewardsClaimed
                 );
             }
@@ -774,7 +939,9 @@ contract MemecoinClaim is
     }
 
     /// @notice Get the claim schedule of a certain claim type
-    function getClaimSchedule(ClaimType _claimType) public view returns (ClaimSchedule memory) {
+    function getClaimSchedule(
+        ClaimType _claimType
+    ) public view returns (ClaimSchedule memory) {
         return claimScheduleOf[_claimType];
     }
 }
