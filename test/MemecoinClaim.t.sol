@@ -80,6 +80,8 @@ contract MemecoinClaimTest is Test {
     function test_DepositAndStartClaim() public {
         uint256 tokenAmount = 1000000; // Example amount
         uint256 claimStartDate = block.timestamp + 1 days; // Start in a day
+        memecoin.approve(address(memecoinClaim), 10000000);
+
         memecoinClaim.depositClaimTokenAndStartClaim(
             tokenAmount,
             claimStartDate
