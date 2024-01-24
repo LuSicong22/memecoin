@@ -4,37 +4,13 @@
 and Rocket Pool are currently the leaders according to DefiLlama. Mantle also recently
 launched their LSP. Briefly explain how the three services work and how they are different.**
 
-### Liquid Staking: Lido vs. Rocket Pool vs. Mantle
+**Lido** operates with a centralized approach, employing a set of professional validator nodes managed by the Lido team. This centralized model simplifies the staking process for users, removing the burden of validator management. Lido imposes no minimum deposit requirements, ensuring accessibility for users of varying sizes. However, a 10% fee on staking rewards is charged, with distribution between the DAO treasury and node operators. Users are issued stETH tokens, representing their staked ETH, which can be utilized within the DeFi ecosystem.
 
-All three platforms, Lido, Rocket Pool, and Mantle, offer liquid staking solutions for Ethereum, allowing users to participate in staking rewards without the technical complexity of running their own validator. However, they differ in their approaches and key features:
+In contrast, **Rocket Pool** adopts a decentralized paradigm, relying on a network of individual users who independently run their validator nodes. To engage in staking, Rocket Pool necessitates a 16 ETH minimum deposit for creating a minipool. This decentralized approach enhances censorship resistance and trustlessness. The platform levies a 5% fee on staking rewards, shared between node operators and a decentralized insurance fund. Users receive rETH tokens, tradable assets compatible with various DeFi protocols.
 
-**Lido:**
+**Mantle** introduces a hybrid model that combines centralized and decentralized elements. The platform maintains its own high-performance validator nodes while concurrently permitting users to contribute their ETH to community-run validator pools. This hybrid structure aims to strike a balance between security and decentralization. Similar to Lido, Mantle imposes no minimum deposit for joining community pools, fostering accessibility. A 10% fee on staking rewards is charged, with distribution allocated to users, node operators, and protocol development. Users receive mETH tokens as staking rewards, providing versatility within the DeFi landscape.
 
-- **Centralized:** Lido utilizes a set of professional validator nodes operated by the Lido team.
-- **Minimum Deposit:** No minimum deposit required, making it accessible to all user sizes.
-- **Rewards:** Lido charges a 10% fee on staking rewards, distributed between the DAO treasury and node operators.
-- **Derivatives:** Users receive stETH tokens representing their staked ETH, which can be traded or used in DeFi protocols.
-
-**Rocket Pool:**
-
-- **Decentralized:** Rocket Pool relies on a network of individual users who run their own validator nodes.
-- **Minimum Deposit:** Requires 16 ETH to create a minipool and participate in staking, making it less accessible to smaller users.
-- **Rewards:** Rocket Pool charges a 5% fee on staking rewards, shared between node operators and a decentralized insurance fund.
-- **Derivatives:** Users receive rETH tokens representing their staked ETH, which are also freely tradable and usable in DeFi.
-
-**Mantle:**
-
-- **Hybrid:** Mantle combines elements of both centralized and decentralized approaches. It has its own set of high-performance validator nodes while simultaneously allowing users to contribute their own ETH to join community-run validator pools.
-- **Minimum Deposit:** No minimum deposit required for joining community pools, similar to Lido.
-- **Rewards:** Mantle charges a 10% fee on staking rewards, with 70% distributed to users, 20% for node operators, and 10% for protocol development.
-- **Derivatives:** Users receive mETH tokens for staking, which can be traded or used in DeFi.
-
-**Key Differences:**
-
-- **Centralization:** Lido is centralized, while Rocket Pool and Mantle are decentralized or hybrid. This impacts trust and censorship resistance.
-- **Accessibility:** Lido and Mantle require low minimum deposits, making them easier to access for small investors.
-- **Fees:** Lido and Mantle have higher fees compared to Rocket Pool.
-- **Validator Infrastructure:** Lido operates its own nodes, while Rocket Pool and Mantle rely on user-run nodes or a combination of both.
+In summary, Lido emphasizes a centralized approach, Rocket Pool champions full decentralization, and Mantle integrates both models. The choice between these platforms depends on considerations of trust, security, and the level of decentralization desired by the user.
 
 # Question 2
 
