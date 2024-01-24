@@ -88,7 +88,7 @@ contract MemecoinClaimTest is Test {
         assertEq(memecoin.balanceOf(address(memecoinClaim)), tokenAmount); // Verify token deposit
     }
 
-    function test_ClaimBeforeStart() public {
+    function test_RevertWhen_ClaimBeforeStart() public {
         _claimOnDay(false, 0, 0);
     }
 
