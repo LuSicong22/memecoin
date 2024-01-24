@@ -50,9 +50,9 @@ contract MemecoinClaimTest is Test {
 
     function test_SetClaimables() public {
         address[] memory prankWallets = new address[](3);
-        prankWallets[0] = address(0x1234);
-        prankWallets[1] = address(0x5678);
-        prankWallets[2] = address(0x9abc);
+        prankWallets[0] = address(0x0002e98993f83FF61bad90294480335F2F6c4980);
+        prankWallets[1] = address(0x0008d343091EF8BD3EFA730F6aAE5A26a285C7a2);
+        prankWallets[2] = address(0x00440F11DC0F92deAa3A563c6EfBAd3cd6AeFfa9);
 
         uint128[] memory claimables = new uint128[](3);
         claimables[0] = 1000;
@@ -68,7 +68,7 @@ contract MemecoinClaimTest is Test {
 
         // Assert that claimable amounts are set correctly for each prank wallet and claim type
         for (uint256 i = 0; i < prankWallets.length; i++) {
-            (uint128 claimed, uint128 claimable) = memecoinClaim.usersClaimData(
+            (uint128 claimable, uint128 claimed) = memecoinClaim.usersClaimData(
                 prankWallets[i],
                 claimTypes[i]
             );
