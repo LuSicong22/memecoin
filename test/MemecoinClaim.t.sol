@@ -160,28 +160,94 @@ contract MemecoinClaimTest is Test {
     }
 
     function test_ClaimOnDay1() public {
-        memecoinClaim.setClaimStartDate(block.timestamp);
-        // Warp to day 1
-        vm.warp(memecoinClaim.claimStartDate() + 1 days); // Assuming claim starts on day 0
+        uint256 tokenAmount = 1000000; // Example amount
+        uint256 claimStartDate = block.timestamp;
+        memecoin.approve(address(memecoinClaim), 10000000);
 
         ClaimType[] memory claimType = new ClaimType[](1);
         claimType[0] = ClaimType.CommunityPresale;
+
+        ClaimSchedule[] memory schedules = new ClaimSchedule[](1);
+        uint256[] memory lockUpBPs = new uint256[](3);
+        lockUpBPs[0] = 2500;
+        lockUpBPs[1] = 5000;
+        lockUpBPs[2] = 7500;
+
+        schedules[0] = ClaimSchedule({
+            startCycle: 0, // 0 cycles starting from claim start
+            lockUpBPs: lockUpBPs // Lockup percentages for each cycle (25%, 50%, 75%)
+        });
+
+        memecoinClaim.setClaimSchedules(claimType, schedules);
+
+        memecoinClaim.depositClaimTokenAndStartClaim(
+            tokenAmount,
+            claimStartDate
+        );
+
+        address[] memory wallets = new address[](1);
+        wallets[0] = address(this);
+
+        uint128[] memory claimables = new uint128[](1);
+        claimables[0] = 1000;
+
+        ClaimType[] memory claimTypes = new ClaimType[](1);
+        claimTypes[0] = ClaimType.CommunityPresale;
+
+        memecoinClaim.setClaimables(wallets, claimables, claimTypes);
+
+        // Warp to claim start date
+        vm.warp(memecoinClaim.claimStartDate() + 1 days);
+
         // Call claim and assert successful claim
         uint256 initialBalance = memecoin.balanceOf(address(this)); // Assuming test account is claiming
         memecoinClaim.claim(address(0), claimType);
-        assertEq(memecoin.balanceOf(address(this)), initialBalance + 2500);
+        assertEq(memecoin.balanceOf(address(this)), initialBalance + 251);
     }
 
     function test_ClaimOnDay540() public {
-        memecoinClaim.setClaimStartDate(block.timestamp);
-        // Warp to day 540
-        vm.warp(memecoinClaim.claimStartDate() + 540 days);
+        uint256 tokenAmount = 1000000; // Example amount
+        uint256 claimStartDate = block.timestamp;
+        memecoin.approve(address(memecoinClaim), 10000000);
 
         ClaimType[] memory claimType = new ClaimType[](1);
         claimType[0] = ClaimType.CommunityPresale;
+
+        ClaimSchedule[] memory schedules = new ClaimSchedule[](1);
+        uint256[] memory lockUpBPs = new uint256[](3);
+        lockUpBPs[0] = 2500;
+        lockUpBPs[1] = 5000;
+        lockUpBPs[2] = 7500;
+
+        schedules[0] = ClaimSchedule({
+            startCycle: 0, // 0 cycles starting from claim start
+            lockUpBPs: lockUpBPs // Lockup percentages for each cycle (25%, 50%, 75%)
+        });
+
+        memecoinClaim.setClaimSchedules(claimType, schedules);
+
+        memecoinClaim.depositClaimTokenAndStartClaim(
+            tokenAmount,
+            claimStartDate
+        );
+
+        address[] memory wallets = new address[](1);
+        wallets[0] = address(this);
+
+        uint128[] memory claimables = new uint128[](1);
+        claimables[0] = 1000;
+
+        ClaimType[] memory claimTypes = new ClaimType[](1);
+        claimTypes[0] = ClaimType.CommunityPresale;
+
+        memecoinClaim.setClaimables(wallets, claimables, claimTypes);
+
+        // Warp to day 540
+        vm.warp(memecoinClaim.claimStartDate() + 540 days);
+
         // Call claim and assert successful claim
         uint256 initialBalance = memecoin.balanceOf(address(this)); // Assuming test account is claiming
         memecoinClaim.claim(address(0), claimType);
-        assertEq(memecoin.balanceOf(address(this)), initialBalance + 2500);
+        assertEq(memecoin.balanceOf(address(this)), initialBalance + 1000); // 100% of claimable (1000)
     }
 }
