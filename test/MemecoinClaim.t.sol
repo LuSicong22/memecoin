@@ -8,6 +8,10 @@ import {MemecoinClaim, ClaimSchedule, ClaimType} from "contracts/claim/MemecoinC
 contract MemecoinClaimTest is Test {
     Memecoin memecoin;
     MemecoinClaim memecoinClaim;
+    event ClaimTokenDepositedAndClaimStarted(
+        uint256 tokenAmount,
+        uint256 claimStartDate
+    );
 
     function setUp() public {
         memecoin = new Memecoin("Memecoin", "MEME", 1e24, address(this));
@@ -81,6 +85,9 @@ contract MemecoinClaimTest is Test {
         uint256 tokenAmount = 1000000; // Example amount
         uint256 claimStartDate = block.timestamp + 1 days; // Start in a day
         memecoin.approve(address(memecoinClaim), 10000000);
+
+        vm.expectEmit();
+        emit ClaimTokenDepositedAndClaimStarted(tokenAmount, claimStartDate);
 
         memecoinClaim.depositClaimTokenAndStartClaim(
             tokenAmount,
