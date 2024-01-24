@@ -1,6 +1,6 @@
 ## Note from Simon
 
-I faced issue to setUp `memecoinClaim` contract because the contract is already initalized somehow. Thus I disabled the initalizing check in `Initializable.sol`.
+I had issue to setUp `memecoinClaim` contract because the contract is already initalized somehow. Thus I disabled the initalizing check in `Initializable.sol` temporarily. I'm still working on this issue.
 
 ## Foundry
 
