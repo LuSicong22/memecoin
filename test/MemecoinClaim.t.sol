@@ -102,6 +102,7 @@ contract MemecoinClaimTest is Test {
     }
 
     function test_ClaimBeforeClaimStart() public {
+        memecoinClaim.setClaimStartDate(block.timestamp);
         // Warp to a block before claim start
         vm.warp(memecoinClaim.claimStartDate() - 1);
 
@@ -113,6 +114,7 @@ contract MemecoinClaimTest is Test {
     }
 
     function test_ClaimOnDay0() public {
+        memecoinClaim.setClaimStartDate(block.timestamp);
         // Warp to claim start date
         vm.warp(memecoinClaim.claimStartDate());
 
@@ -125,6 +127,7 @@ contract MemecoinClaimTest is Test {
     }
 
     function test_ClaimOnDay1() public {
+        memecoinClaim.setClaimStartDate(block.timestamp);
         // Warp to day 1
         vm.warp(memecoinClaim.claimStartDate() + 1 days); // Assuming claim starts on day 0
 
@@ -137,6 +140,7 @@ contract MemecoinClaimTest is Test {
     }
 
     function test_ClaimOnDay540() public {
+        memecoinClaim.setClaimStartDate(block.timestamp);
         // Warp to day 540
         vm.warp(memecoinClaim.claimStartDate() + 540 days);
 
