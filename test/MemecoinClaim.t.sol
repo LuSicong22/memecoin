@@ -69,17 +69,10 @@ contract MemecoinClaimTest is Test {
     }
 
     function test_DepositAndStartClaim() public {
-        uint256 tokenAmount = 1000000; // Example amount
-        uint256 claimStartDate = block.timestamp;
-        memecoin.approve(address(memecoinClaim), 10000000);
-
-        vm.expectEmit();
-        emit ClaimTokenDepositedAndClaimStarted(tokenAmount, claimStartDate);
-
-        memecoinClaim.depositClaimTokenAndStartClaim(
-            tokenAmount,
-            claimStartDate
-        );
+        (
+            uint256 tokenAmount,
+            uint256 claimStartDate
+        ) = _setUpDepositClaimTokenAndStartClaim();
 
         // Assert successful deposit and claim activation
         assertEq(memecoinClaim.claimStartDate(), claimStartDate);
@@ -128,22 +121,32 @@ contract MemecoinClaimTest is Test {
         memecoinClaim.setClaimSchedules(claimType, schedules);
     }
 
-    function _claimOnDay(
-        bool claimAfterStart,
-        uint256 daysPassed,
-        uint256 expectedClaimed
-    ) private {
-        uint256 tokenAmount = 1000000; // Example amount
-        uint256 claimStartDate = block.timestamp;
+    function _setUpDepositClaimTokenAndStartClaim()
+        private
+        returns (uint256 tokenAmount, uint256 claimStartDate)
+    {
+        tokenAmount = 1000000; // Example amount
+        claimStartDate = block.timestamp;
         memecoin.approve(address(memecoinClaim), 10000000);
 
         ClaimType[] memory claimType = _setUpClaimType();
         _setUpClaimSchedule(claimType);
 
+        vm.expectEmit();
+        emit ClaimTokenDepositedAndClaimStarted(tokenAmount, claimStartDate);
+
         memecoinClaim.depositClaimTokenAndStartClaim(
             tokenAmount,
             claimStartDate
         );
+    }
+
+    function _claimOnDay(
+        bool claimAfterStart,
+        uint256 daysPassed,
+        uint256 expectedClaimed
+    ) private {
+        _setUpDepositClaimTokenAndStartClaim();
 
         address[] memory wallets = new address[](1);
         wallets[0] = address(this);
@@ -162,7 +165,7 @@ contract MemecoinClaimTest is Test {
 
             // Call claim and assert successful claim
             uint256 initialBalance = memecoin.balanceOf(address(this)); // Assuming test account is claiming
-            memecoinClaim.claim(address(0), claimType);
+            memecoinClaim.claim(address(0), claimTypes);
             assertEq(
                 memecoin.balanceOf(address(this)),
                 initialBalance + expectedClaimed
@@ -173,7 +176,7 @@ contract MemecoinClaimTest is Test {
 
             // Call claim and assert revert
             vm.expectRevert();
-            memecoinClaim.claim(address(0), claimType);
+            memecoinClaim.claim(address(0), claimTypes);
         }
     }
 }
