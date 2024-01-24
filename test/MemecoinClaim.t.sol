@@ -115,7 +115,7 @@ contract MemecoinClaimTest is Test {
 
     function test_ClaimOnDay0() public {
         uint256 tokenAmount = 1000000; // Example amount
-        uint256 claimStartDate = block.timestamp + 1 days;
+        uint256 claimStartDate = block.timestamp;
         memecoin.approve(address(memecoinClaim), 10000000);
 
         ClaimType[] memory claimType = new ClaimType[](1);
@@ -156,7 +156,7 @@ contract MemecoinClaimTest is Test {
         // Call claim and assert successful claim
         uint256 initialBalance = memecoin.balanceOf(address(this)); // Assuming test account is claiming
         memecoinClaim.claim(address(0), claimType);
-        assertEq(memecoin.balanceOf(address(this)), initialBalance);
+        assertEq(memecoin.balanceOf(address(this)), initialBalance + 250); // 25% of claimable (1000)
     }
 
     function test_ClaimOnDay1() public {
