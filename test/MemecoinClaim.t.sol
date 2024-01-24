@@ -25,21 +25,8 @@ contract MemecoinClaimTest is Test {
     }
 
     function test_SetClaimSchedules() public {
-        ClaimType[] memory claimType = new ClaimType[](1);
-        claimType[0] = ClaimType.CommunityPresale;
-
-        ClaimSchedule[] memory schedules = new ClaimSchedule[](1);
-        uint256[] memory lockUpBPs = new uint256[](3);
-        lockUpBPs[0] = 2500;
-        lockUpBPs[1] = 5000;
-        lockUpBPs[2] = 7500;
-
-        schedules[0] = ClaimSchedule({
-            startCycle: 0, // 0 cycles starting from claim start
-            lockUpBPs: lockUpBPs // Lockup percentages for each cycle (25%, 50%, 75%)
-        });
-
-        memecoinClaim.setClaimSchedules(claimType, schedules);
+        ClaimType[] memory claimType = _setUpClaimType();
+        _setUpClaimSchedule(claimType);
 
         // Assert correct schedule data for CommunityPresale
         ClaimSchedule memory schedule = memecoinClaim.getClaimSchedule(
@@ -83,7 +70,7 @@ contract MemecoinClaimTest is Test {
 
     function test_DepositAndStartClaim() public {
         uint256 tokenAmount = 1000000; // Example amount
-        uint256 claimStartDate = block.timestamp + 1 days; // Start in a day
+        uint256 claimStartDate = block.timestamp;
         memecoin.approve(address(memecoinClaim), 10000000);
 
         vm.expectEmit();
@@ -102,33 +89,31 @@ contract MemecoinClaimTest is Test {
     }
 
     function test_ClaimBeforeStart() public {
-        claimOnDay(false, 0, 0);
+        _claimOnDay(false, 0, 0);
     }
 
     function test_ClaimOnDay0() public {
-        claimOnDay(true, 0, 250);
+        _claimOnDay(true, 0, 250);
     }
 
     function test_ClaimOnDay1() public {
-        claimOnDay(true, 1, 251);
+        _claimOnDay(true, 1, 251);
     }
 
     function test_ClaimOnDay540() public {
-        claimOnDay(true, 540, 1000);
+        _claimOnDay(true, 540, 1000);
     }
 
-    function claimOnDay(
-        bool claimAfterStart,
-        uint256 daysPassed,
-        uint256 expectedClaimed
-    ) public {
-        uint256 tokenAmount = 1000000; // Example amount
-        uint256 claimStartDate = block.timestamp;
-        memecoin.approve(address(memecoinClaim), 10000000);
-
-        ClaimType[] memory claimType = new ClaimType[](1);
+    function _setUpClaimType()
+        private
+        pure
+        returns (ClaimType[] memory claimType)
+    {
+        claimType = new ClaimType[](1);
         claimType[0] = ClaimType.CommunityPresale;
+    }
 
+    function _setUpClaimSchedule(ClaimType[] memory claimType) private {
         ClaimSchedule[] memory schedules = new ClaimSchedule[](1);
         uint256[] memory lockUpBPs = new uint256[](3);
         lockUpBPs[0] = 2500;
@@ -141,6 +126,19 @@ contract MemecoinClaimTest is Test {
         });
 
         memecoinClaim.setClaimSchedules(claimType, schedules);
+    }
+
+    function _claimOnDay(
+        bool claimAfterStart,
+        uint256 daysPassed,
+        uint256 expectedClaimed
+    ) private {
+        uint256 tokenAmount = 1000000; // Example amount
+        uint256 claimStartDate = block.timestamp;
+        memecoin.approve(address(memecoinClaim), 10000000);
+
+        ClaimType[] memory claimType = _setUpClaimType();
+        _setUpClaimSchedule(claimType);
 
         memecoinClaim.depositClaimTokenAndStartClaim(
             tokenAmount,
