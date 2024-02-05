@@ -1,6 +1,6 @@
-## Note from Simon
+## Note
 
-I removed `_disableInitializers()` inside the constructor of `MemecoinClaim.sol` so that `MemecoinClaim` contract could be initialized in the test case.
+Removed `_disableInitializers()` inside the constructor of `MemecoinClaim.sol` so that `MemecoinClaim` contract could be initialized in the test case.
 
 ## Foundry
 
